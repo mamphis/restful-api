@@ -18,7 +18,7 @@ export class BasicDAO<T> implements IGenericDAO<T>, ITransactionDAO {
         this.manager = manager;
         return this;
     }
-    
+
     constructor(private repoType: EntityTarget<T>) {
     }
 

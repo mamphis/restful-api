@@ -3,13 +3,13 @@ import createHttpError from 'http-errors';
 import { DeepPartial, QueryFailedError } from 'typeorm';
 import { BasicDAO } from '../../data/dao/basicdao';
 
-export default <T>(
-    dao: BasicDAO<T>,
-    entity: new () => DeepPartial<T>): Router => {
-
+export default <T>(entity: new () => DeepPartial<T>): Router => {
+    const dao = new BasicDAO<T>(entity);
     const router = Router();
+    const entityRouter = Router();
 
-    router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+    router.use(Reflect.getMetadata('rest-api:path', entity), entityRouter);
+    entityRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
         try {
             const all = await dao.readAll();
             res.json(all);
@@ -24,7 +24,7 @@ export default <T>(
         }
     });
 
-    router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+    entityRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
         try {
             const entity = await dao.read(req.params.id);
             res.json(entity || {});
@@ -39,7 +39,7 @@ export default <T>(
         }
     });
 
-    router.put('/', async (req: Request, res: Response, next: NextFunction) => {
+    entityRouter.put('/', async (req: Request, res: Response, next: NextFunction) => {
         try {
             const e = new entity();
             const newEntity: T = Object.assign(e, req.body);
@@ -57,7 +57,7 @@ export default <T>(
         }
     });
 
-    router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+    entityRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
         try {
             const e = new entity();
             const newEntity: T = Object.assign(e, req.body);
@@ -76,7 +76,7 @@ export default <T>(
         }
     });
 
-    router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+    entityRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
         try {
             await dao.delete(req.params.id)
             res.json({});
@@ -91,5 +91,5 @@ export default <T>(
         }
     });
 
-    return router;
+    return entityRouter;
 }

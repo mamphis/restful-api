@@ -2,7 +2,10 @@ import express, { Application, Response, Request, NextFunction } from "express";
 import createHttpError from "http-errors";
 import moment from "moment";
 import { features } from "..";
+import { Customer } from "../model/customer";
+import { OpenAPIGenerator } from "../openapi/generator";
 import basicAuth, { databaseChecker } from "./middleware/basicauth";
+import router from "./routes/router";
 
 export class Server {
     private app: Application;
@@ -16,6 +19,8 @@ export class Server {
         this.app.use(express.json());
         this.app.use(basicAuth(databaseChecker));
 
+        this.app.use(OpenAPIGenerator.it.basePath, router<Customer>(Customer));
+        OpenAPIGenerator.it.print();
         this.app.use(async (req: Request, res: Response, next: NextFunction) => {
             if (!features.enableVerboseLogging) {
                 return next();

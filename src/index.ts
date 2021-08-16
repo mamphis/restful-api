@@ -4,7 +4,7 @@ import { argv } from 'process';
 import { IDatabase } from './data/idatabase';
 import { SQLiteDatabase } from './data/sqlite';
 import { Server } from './server/server';
-import { User } from './model/user';
+import { Customer } from './model/customer';
 
 dotenv.config();
 export type SQLConnection = 'sqlite' | 'mysql';
