@@ -19,8 +19,6 @@ export class Server {
         this.app.use(express.json());
         this.app.use(basicAuth(databaseChecker));
 
-        this.app.use(OpenAPIGenerator.it.basePath, router<Customer>(Customer));
-        OpenAPIGenerator.it.print();
         this.app.use(async (req: Request, res: Response, next: NextFunction) => {
             if (!features.enableVerboseLogging) {
                 return next();
@@ -32,6 +30,8 @@ export class Server {
 
             console.log(`(${end.diff(start)}ms) [${req.method}] ${req.originalUrl} => ${res.statusCode} ${res.statusMessage} ${req.method === 'POST' ? JSON.stringify(req.body) : ''}`);
         });
+
+        OpenAPIGenerator.it.withDoc().use(this.app, this.port, Customer);
 
         this.app.use((req: Request, res: Response, next: NextFunction) => {
             return next(createHttpError(404));
