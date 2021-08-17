@@ -1,3 +1,9 @@
+import { Application, Router } from "express";
+import { URL } from "url";
+import router from "../server/routes/router";
+import swaggerUi from 'swagger-ui-express';
+import { hostname } from "os";
+
 type methods = Partial<'get' | 'post' | 'put' | 'delete'>;
 type statusCodes = '200';
 type contentTypes = 'application/json';
@@ -97,18 +103,76 @@ type entity = {
     }
 };
 
+type openApiSpecs = entity &
+{
+    openapi: string,
+    info: {
+        title: string,
+        version: string,
+    },
+    servers: Array<{
+        url: string
+    }>,
+}
+
 export class OpenAPIGenerator {
-    print() {
-        console.log(JSON.stringify(this.classes, undefined, 2));
+    withDoc() {
+        this.addDocsToServer = true;
+        return this;
+    }
+
+    use(app: Application, port: number, ...entities: (new () => any)[]): void {
+        entities.forEach(e => {
+            app.use(this.basePath, router(e));
+        });
+
+        if (this.addDocsToServer) {
+            const specs = entities.reduce((prev: openApiSpecs, curr: new () => any) => {
+                Object.assign(prev.paths, this.classes[curr.name].paths);
+
+                Object.assign(prev.components.requestBodies, this.classes[curr.name].components.requestBodies);
+                Object.assign(prev.components.schemas, this.classes[curr.name].components.schemas);
+
+                return prev;
+            }, {
+                openapi: this.version,
+                info: {
+                    title: 'OpenApi Documentation',
+                    version: 'v1'
+                },
+                paths: {},
+                components: { schemas: {}, requestBodies: {} },
+                servers: []
+            } as openApiSpecs);
+            app.set('json spaces', 2)
+            const url = new URL('http://google.de');
+
+            specs.servers = [
+                {
+                    url: `http://${hostname()}:${port}${this.basePath}`
+                }, {
+                    url: `https://${hostname()}:${port}${this.basePath}`
+                }
+            ]
+
+            app.use('/swagger', swaggerUi.serve, swaggerUi.setup(specs, {
+                explorer: true
+            }));
+            app.get('/openapi.json', (req, res, next) => {
+
+                res.json(specs);
+            });
+        }
     }
 
     private static instance: OpenAPIGenerator;
+    private addDocsToServer: boolean = false;
     private path: string = '/api';
     private classes: { [name: string]: entity } = {};
 
     public static get it(): OpenAPIGenerator {
         if (!this.instance) {
-            this.instance = new OpenAPIGenerator('3.1');
+            this.instance = new OpenAPIGenerator('3.0.0');
         }
 
         return this.instance;
