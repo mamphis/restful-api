@@ -91,5 +91,5 @@ export default <T>(entity: new () => DeepPartial<T>): Router => {
         }
     });
 
-    return entityRouter;
+    return router;
 }
