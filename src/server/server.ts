@@ -17,6 +17,8 @@ export class Server {
 
     route() {
         this.app.use(express.json());
+        // TODO: Swagger docs before auth
+        // TODO: auth into OpenApiGenerator
         this.app.use(basicAuth(databaseChecker));
 
         this.app.use(async (req: Request, res: Response, next: NextFunction) => {
